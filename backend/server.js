@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 // Import routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
+import roadmapRoutes from './routes/roadmap.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ connectDB();
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/roadmap', roadmapRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

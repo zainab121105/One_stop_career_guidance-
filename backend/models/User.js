@@ -39,11 +39,11 @@ const userSchema = new mongoose.Schema({
     },
     interests: [{
       type: String,
-      enum: ['technology', 'creative', 'business', 'science', 'healthcare', 'education', 'social', 'finance']
+      enum: ['technology', 'creative', 'business', 'science', 'healthcare', 'education', 'social', 'finance', 'environment', 'sports']
     }],
     goals: [{
       type: String,
-      enum: ['high-salary', 'work-life-balance', 'job-security', 'creativity', 'impact', 'flexibility']
+      enum: ['high-salary', 'work-life-balance', 'job-security', 'creativity', 'impact', 'flexibility', 'leadership', 'entrepreneurship']
     }],
     preferredLearningStyle: {
       type: String,
@@ -52,6 +52,27 @@ const userSchema = new mongoose.Schema({
     timeCommitment: {
       type: String,
       enum: ['1-2-hours', '3-5-hours', '6-10-hours', '10-plus-hours']
+    },
+    challenges: [{
+      type: String,
+      enum: ['lack-of-experience', 'skill-gaps', 'time-constraints', 'financial-limitations', 'unclear-direction', 'networking', 'confidence']
+    }],
+    motivations: [{
+      type: String,
+      enum: ['career-growth', 'financial-stability', 'personal-fulfillment', 'family-support', 'societal-impact', 'innovation', 'recognition']
+    }],
+    currentSituation: {
+      employment: {
+        type: String,
+        enum: ['student', 'employed', 'unemployed', 'self-employed', 'career-break']
+      },
+      satisfactionLevel: {
+        type: Number,
+        min: 1,
+        max: 10
+      },
+      biggestConcern: String,
+      dreamJob: String
     }
   },
   profile: {
@@ -59,7 +80,94 @@ const userSchema = new mongoose.Schema({
     bio: String,
     location: String,
     currentRole: String,
-    experience: String
+    experience: {
+      type: String,
+      enum: ['none', '0-1-years', '1-3-years', '3-5-years', '5-10-years', '10-plus-years']
+    },
+    currentSkills: [{
+      name: String,
+      level: {
+        type: String,
+        enum: ['beginner', 'intermediate', 'advanced', 'expert']
+      },
+      yearStarted: Number,
+      certifications: [String]
+    }],
+    education: {
+      level: {
+        type: String,
+        enum: ['high-school', 'associate', 'bachelor', 'master', 'phd', 'bootcamp', 'self-taught']
+      },
+      field: String,
+      institution: String,
+      graduationYear: Number,
+      gpa: Number,
+      relevantCourses: [String]
+    },
+    workExperience: [{
+      company: String,
+      role: String,
+      startDate: Date,
+      endDate: Date,
+      current: Boolean,
+      description: String,
+      technologies: [String],
+      achievements: [String]
+    }],
+    projects: [{
+      name: String,
+      description: String,
+      technologies: [String],
+      url: String,
+      githubUrl: String,
+      startDate: Date,
+      endDate: Date,
+      status: {
+        type: String,
+        enum: ['completed', 'in-progress', 'planned']
+      }
+    }],
+    careerPreferences: {
+      workEnvironment: {
+        type: String,
+        enum: ['remote', 'hybrid', 'onsite', 'flexible']
+      },
+      companySize: {
+        type: String,
+        enum: ['startup', 'small', 'medium', 'large', 'enterprise']
+      },
+      industrySectors: [String],
+      jobTypes: {
+        type: [String],
+        enum: ['full-time', 'part-time', 'contract', 'freelance', 'internship']
+      },
+      salaryExpectation: {
+        min: Number,
+        max: Number,
+        currency: {
+          type: String,
+          default: 'USD'
+        }
+      },
+      willingToRelocate: Boolean,
+      availableStartDate: Date
+    },
+    assessments: {
+      personalityType: String, // e.g., "INTJ", "ENFP"
+      strengthsFinderResults: [String],
+      skillAssessments: [{
+        skill: String,
+        score: Number,
+        maxScore: Number,
+        assessedAt: Date,
+        platform: String
+      }],
+      careerMatches: [{
+        career: String,
+        matchPercentage: Number,
+        assessedAt: Date
+      }]
+    }
   },
   stats: {
     completedCourses: {
