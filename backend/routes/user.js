@@ -176,6 +176,48 @@ router.get('/recommendations', auth, async (req, res) => {
       }
       
       if (interests.includes('healthcare')) {
+        // @route   GET /api/user/skills
+        // @desc    Get user skills for progress tracker
+        // @access  Private
+        router.get('/skills', auth, async (req, res) => {
+          try {
+            const user = req.user;
+            // Extract skills from user profile
+            const skills = (user.profile?.currentSkills || []).map(skill => ({
+              name: skill.name,
+              level: skill.level,
+              yearStarted: skill.yearStarted,
+              certifications: skill.certifications || [],
+              category: skill.category || ''
+            }));
+            res.json({ skills });
+          } catch (error) {
+            console.error('Get skills error:', error);
+            res.status(500).json({ message: 'Server error fetching skills' });
+          }
+        });
+
+        // @route   GET /api/user/progress
+        // @desc    Get user progress chart data
+        // @access  Private
+        router.get('/progress', auth, async (req, res) => {
+          try {
+            const user = req.user;
+            // Example: Generate mock progress data based on stats
+            // In a real app, this should be calculated from activities or learning logs
+            const weekData = [45, 30, 60, 40, 55, 35, 50];
+            const monthData = [280, 320, 250, 300];
+            const yearData = [1200, 1350, 1100, 1400, 1250, 1500];
+            res.json({
+              week: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], data: weekData },
+              month: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], data: monthData },
+              year: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], data: yearData }
+            });
+          } catch (error) {
+            console.error('Get progress error:', error);
+            res.status(500).json({ message: 'Server error fetching progress' });
+          }
+        });
         recommendations.push({
           title: 'Healthcare Data Analyst',
           description: 'Use data to improve healthcare outcomes and efficiency',
@@ -256,6 +298,49 @@ router.put('/preferences', auth, [
   } catch (error) {
     console.error('Update preferences error:', error);
     res.status(500).json({ message: 'Server error updating preferences' });
+  }
+});
+
+// @route   GET /api/user/skills
+// @desc    Get user skills for progress tracker
+// @access  Private
+router.get('/skills', auth, async (req, res) => {
+  try {
+    const user = req.user;
+    // Extract skills from user profile
+    const skills = (user.profile?.currentSkills || []).map(skill => ({
+      name: skill.name,
+      level: skill.level,
+      yearStarted: skill.yearStarted,
+      certifications: skill.certifications || [],
+      category: skill.category || ''
+    }));
+    res.json({ skills });
+  } catch (error) {
+    console.error('Get skills error:', error);
+    res.status(500).json({ message: 'Server error fetching skills' });
+  }
+});
+
+// @route   GET /api/user/progress
+// @desc    Get user progress chart data
+// @access  Private
+router.get('/progress', auth, async (req, res) => {
+  try {
+    const user = req.user;
+    // Example: Generate mock progress data based on stats
+    // In a real app, this should be calculated from activities or learning logs
+    const weekData = [45, 30, 60, 40, 55, 35, 50];
+    const monthData = [280, 320, 250, 300];
+    const yearData = [1200, 1350, 1100, 1400, 1250, 1500];
+    res.json({
+      week: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], data: weekData },
+      month: { labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], data: monthData },
+      year: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], data: yearData }
+    });
+  } catch (error) {
+    console.error('Get progress error:', error);
+    res.status(500).json({ message: 'Server error fetching progress' });
   }
 });
 

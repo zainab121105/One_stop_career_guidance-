@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import { 
   Trophy, 
   Target, 
@@ -18,118 +19,75 @@ import DashboardNavbar from '../components/DashboardNavbar';
 
 const ProgressTracker = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
+  const [userStats, setUserStats] = useState({
+    totalPoints: 0,
+    currentLevel: 1,
+    nextLevelPoints: 100,
+    streak: 0,
+    completedCourses: 0,
+    skillsBadges: 0,
+    studyHours: 0
+  });
+  const [badges, setBadges] = useState([]);
+  const [progressData, setProgressData] = useState({
+    week: { labels: [], data: [] },
+    month: { labels: [], data: [] },
+    year: { labels: [], data: [] }
+  });
+  const [recentAchievements, setRecentAchievements] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const userStats = {
-    totalPoints: 2450,
-    currentLevel: 8,
-    nextLevelPoints: 2800,
-    streak: 12,
-    completedCourses: 8,
-    skillsBadges: 15,
-    studyHours: 147
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, badgesRes, progressRes, activityRes, skillsRes] = await Promise.all([
+          api.get('/user/stats'),
+          api.get('/user/badges'),
+          api.get('/user/progress'),
+          api.get('/user/activity'),
+          api.get('/user/skills')
+        ]);
 
-  const badges = [
-    {
-      id: 1,
-      name: 'Early Bird',
-      description: 'Complete 5 morning study sessions',
-      icon: Crown,
-      earned: true,
-      earnedDate: '2024-01-15',
-      rarity: 'rare',
-      points: 100
-    },
-    {
-      id: 2,
-      name: 'Consistency King',
-      description: 'Maintain 10-day learning streak',
-      icon: Flame,
-      earned: true,
-      earnedDate: '2024-01-18',
-      rarity: 'epic',
-      points: 200
-    },
-    {
-      id: 3,
-      name: 'Skill Master',
-      description: 'Complete 5 courses in one category',
-      icon: Medal,
-      earned: true,
-      earnedDate: '2024-01-20',
-      rarity: 'common',
-      points: 50
-    },
-    {
-      id: 4,
-      name: 'Quiz Champion',
-      description: 'Score 100% on 10 quizzes',
-      icon: Trophy,
-      earned: false,
-      progress: 7,
-      total: 10,
-      rarity: 'legendary',
-      points: 500
-    },
-    {
-      id: 5,
-      name: 'Speed Learner',
-      description: 'Complete a course in under 24 hours',
-      icon: Zap,
-      earned: false,
-      progress: 0,
-      total: 1,
-      rarity: 'rare',
-      points: 150
-    }
-  ];
+        setUserStats({
+          totalPoints: statsRes.data.totalPoints || 0,
+          currentLevel: statsRes.data.currentLevel || 1,
+          nextLevelPoints: statsRes.data.nextLevelPoints || 100,
+          streak: statsRes.data.currentStreak || 0,
+          completedCourses: statsRes.data.completedCourses || 0,
+          skillsBadges: statsRes.data.totalBadges || 0,
+          studyHours: statsRes.data.studyHours || 0
+        });
+        setBadges((badgesRes.data.badges || []).map((badge, idx) => ({
+          ...badge,
+          id: idx + 1,
+          icon: badge.icon === 'Crown' ? Crown : badge.icon === 'Flame' ? Flame : badge.icon === 'Medal' ? Medal : badge.icon === 'Trophy' ? Trophy : badge.icon === 'Zap' ? Zap : Star,
+          earned: true,
+          rarity: badge.rarity || 'common',
+          points: badge.points || 0,
+          earnedDate: badge.earnedAt
+        })));
+        setProgressData(progressRes.data);
+        setRecentAchievements((activityRes.data || []).map((act, idx) => ({
+          id: idx + 1,
+          type: act.type,
+          title: act.title,
+          time: act.time,
+          points: act.points
+        })));
+        setSkills((skillsRes.data.skills || []).map(skill => ({
+          name: skill.name,
+          level: typeof skill.level === 'number' ? skill.level : skill.level === 'expert' ? 100 : skill.level === 'advanced' ? 80 : skill.level === 'intermediate' ? 60 : skill.level === 'beginner' ? 40 : 0,
+          category: skill.category || 'General'
+        })));
+      } catch (err) {
+        // handle error (optional)
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
-  const progressData = {
-    week: {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      data: [45, 30, 60, 40, 55, 35, 50]
-    },
-    month: {
-      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-      data: [280, 320, 250, 300]
-    },
-    year: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      data: [1200, 1350, 1100, 1400, 1250, 1500]
-    }
-  };
-
-  const recentAchievements = [
-    {
-      id: 1,
-      type: 'badge',
-      title: 'Earned "Consistency King" badge',
-      time: '2 hours ago',
-      points: 200
-    },
-    {
-      id: 2,
-      type: 'level',
-      title: 'Reached Level 8',
-      time: '1 day ago',
-      points: 100
-    },
-    {
-      id: 3,
-      type: 'course',
-      title: 'Completed "React Fundamentals"',
-      time: '2 days ago',
-      points: 150
-    }
-  ];
-
-  const skills = [
-    { name: 'JavaScript', level: 85, category: 'Programming' },
-    { name: 'React', level: 75, category: 'Frontend' },
-    { name: 'Node.js', level: 60, category: 'Backend' },
-    { name: 'Python', level: 70, category: 'Programming' },
-    { name: 'Database Design', level: 55, category: 'Backend' }
-  ];
 
   const getRarityColor = (rarity) => {
     switch (rarity) {
