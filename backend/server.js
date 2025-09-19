@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import roadmapRoutes from './routes/roadmap.js';
+import aiCounselingRoutes from './routes/aiCounseling.js';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/roadmap', roadmapRoutes);
+app.use('/api/ai-counseling', aiCounselingRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
