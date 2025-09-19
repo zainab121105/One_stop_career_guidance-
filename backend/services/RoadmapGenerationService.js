@@ -1,11 +1,31 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import CareerRoadmap from '../models/CareerRoadmap.js';
-import roadmapCacheService from './RoadmapCacheService.js';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import CareerRoadmap from "../models/CareerRoadmap.js";
+import roadmapCacheService from "./RoadmapCacheService.js";
 
 class RoadmapGenerationService {
   constructor() {
+    // Debug environment variables
+    console.log("🔧 RoadmapService Constructor Debug:");
+    console.log("🔑 API Key in service:", !!process.env.GOOGLE_AI_API_KEY);
+    console.log(
+      "🔑 API Key preview:",
+      process.env.GOOGLE_AI_API_KEY
+        ? process.env.GOOGLE_AI_API_KEY.substring(0, 10) + "..."
+        : "NOT FOUND"
+    );
+    console.log("🤖 Model from env:", process.env.GOOGLE_AI_MODEL);
+
+    if (!process.env.GOOGLE_AI_API_KEY) {
+      throw new Error("GOOGLE_AI_API_KEY environment variable is not set");
+    }
+
     this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Allow overriding the model via environment variable. Default to a supported Generative Language model.
+    const modelFromEnv = process.env.GOOGLE_AI_MODEL || "gemini-1.5-pro";
+    this.modelName = modelFromEnv;
+    this.model = this.genAI.getGenerativeModel({ model: modelFromEnv });
+
+    console.log("✅ RoadmapService initialized with model:", this.modelName);
   }
 
   /**
@@ -21,13 +41,16 @@ class RoadmapGenerationService {
         preferredLearningStyle: user.onboardingData.preferredLearningStyle,
         timeCommitment: user.onboardingData.timeCommitment,
         currentSkills: user.profile?.currentSkills || [],
-        experience: user.profile?.experience || ''
+        experience: user.profile?.experience || "",
       };
 
       // Check for cached roadmap first
-      const cachedRoadmap = await roadmapCacheService.findCachedRoadmap(userProfile, user._id);
+      const cachedRoadmap = await roadmapCacheService.findCachedRoadmap(
+        userProfile,
+        user._id
+      );
       if (cachedRoadmap) {
-        console.log('Using cached roadmap');
+        console.log("Using cached roadmap");
         // Update access tracking
         cachedRoadmap.accessCount = (cachedRoadmap.accessCount || 0) + 1;
         cachedRoadmap.lastAccessed = new Date();
@@ -35,7 +58,7 @@ class RoadmapGenerationService {
         return cachedRoadmap;
       }
 
-      console.log('Generating new roadmap with AI');
+      console.log("Generating new roadmap with AI");
       // Generate new roadmap using AI
       const prompt = this.buildPrompt(user);
       const result = await this.model.generateContent(prompt);
@@ -44,16 +67,20 @@ class RoadmapGenerationService {
 
       // Create and save the roadmap
       const roadmap = await this.createRoadmap(user, roadmapData, prompt);
-      
+
       // Cache the new roadmap
       const cacheKey = roadmapCacheService.generateCacheKey(userProfile);
       roadmapCacheService.setMemoryCache(cacheKey, roadmap);
-      
-      return roadmap;
 
+      return roadmap;
     } catch (error) {
-      console.error('Roadmap generation error:', error);
-      throw new Error('Failed to generate career roadmap');
+      console.error("Roadmap generation error:", error);
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 5) // First 5 lines of stack trace
+      });
+      throw error; // Preserve the original error instead of generic message
     }
   }
 
@@ -63,14 +90,14 @@ class RoadmapGenerationService {
   buildPrompt(user) {
     const { onboardingData } = user;
     const currentYear = new Date().getFullYear();
-    
+
     return `Generate a comprehensive, personalized career roadmap for a user with the following profile:
 
 **USER PROFILE:**
 - Current Level: ${onboardingData.currentLevel}
 - Career Stage: ${onboardingData.careerStage}
-- Interests: ${onboardingData.interests.join(', ')}
-- Goals: ${onboardingData.goals.join(', ')}
+- Interests: ${onboardingData.interests.join(", ")}
+- Goals: ${onboardingData.goals.join(", ")}
 - Learning Style: ${onboardingData.preferredLearningStyle}
 - Time Commitment: ${onboardingData.timeCommitment} per week
 
@@ -194,22 +221,21 @@ class RoadmapGenerationService {
    - Graduate: Specialization, advanced projects, industry connections
    - Professional: Career transition, skill updates, leadership development
 
-**PHASE STRUCTURE:**
-- Phase 1: Foundation (3-6 months) - Basic skills and knowledge
-- Phase 2: Specialization (6-12 months) - Deep dive into chosen area
-- Phase 3: Application (6-12 months) - Projects, experience, portfolio
-- Phase 4: Professional Development (Ongoing) - Advanced skills, leadership
+**CRITICAL: Response must be complete, valid JSON only. No comments or incomplete sections.**
 
-Each phase should include 3-5 milestones with specific, actionable tasks, real resources with URLs where possible, and clear success criteria.
+Create exactly 2 phases with 2 milestones each:
+- Phase 1: Foundation (0-6 months) - Basic skills
+- Phase 2: Application (6-12 months) - Practice and portfolio
 
-Please generate a roadmap that is:
-- Realistic and achievable given the user's time commitment
-- Current with ${currentYear} market trends and opportunities
-- Personalized to their specific interests and goals
-- Actionable with concrete next steps and resources
-- Flexible to adapt as they progress
+Requirements:
+- Maximum 2 career alternatives 
+- Each milestone: max 2 resources
+- Resource types must be one of: "course", "book", "website", "certification", "tool", "practice", "youtube", "video", "tutorial", "documentation", "platform", "guide"
+- Complete all JSON arrays properly
+- No "// Add more" comments
+- Must be parseable JSON
 
-Return ONLY the JSON object, no additional text.`;
+Return ONLY the complete JSON object, no markdown or extra text.`;
   }
 
   /**
@@ -218,21 +244,42 @@ Return ONLY the JSON object, no additional text.`;
   parseAIResponse(aiResponse) {
     try {
       // Clean the response (remove any markdown formatting)
-      const cleanedResponse = aiResponse
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
+      let cleanedResponse = aiResponse
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
         .trim();
 
+      // Check if response is truncated and attempt to fix common issues
+      if (!cleanedResponse.endsWith("}")) {
+        console.warn("Response appears truncated, attempting to fix...");
+
+        // Find the last complete array or object
+        const lastCompleteIndex = Math.max(
+          cleanedResponse.lastIndexOf("]}"),
+          cleanedResponse.lastIndexOf('"}'),
+          cleanedResponse.lastIndexOf("}]")
+        );
+
+        if (lastCompleteIndex > 0) {
+          cleanedResponse =
+            cleanedResponse.substring(0, lastCompleteIndex + 2) + "\n}";
+        }
+      }
+
       const roadmapData = JSON.parse(cleanedResponse);
-      
+
       // Validate required fields
       this.validateRoadmapData(roadmapData);
-      
+
       return roadmapData;
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      console.error('Raw AI response:', aiResponse);
-      throw new Error('Invalid AI response format');
+      console.error("Failed to parse AI response:", error);
+      console.error("Raw AI response length:", aiResponse.length);
+      console.error(
+        "Raw AI response preview:",
+        aiResponse.substring(0, 500) + "..."
+      );
+      throw new Error("Invalid AI response format");
     }
   }
 
@@ -240,8 +287,13 @@ Return ONLY the JSON object, no additional text.`;
    * Validate roadmap data structure
    */
   validateRoadmapData(data) {
-    const requiredFields = ['title', 'description', 'primaryCareerPath', 'phases'];
-    
+    const requiredFields = [
+      "title",
+      "description",
+      "primaryCareerPath",
+      "phases",
+    ];
+
     for (const field of requiredFields) {
       if (!data[field]) {
         throw new Error(`Missing required field: ${field}`);
@@ -250,7 +302,7 @@ Return ONLY the JSON object, no additional text.`;
 
     // Validate phases structure
     if (!Array.isArray(data.phases) || data.phases.length === 0) {
-      throw new Error('Phases must be a non-empty array');
+      throw new Error("Phases must be a non-empty array");
     }
 
     // Validate each phase has milestones
@@ -273,7 +325,7 @@ Return ONLY the JSON object, no additional text.`;
       preferredLearningStyle: user.onboardingData.preferredLearningStyle,
       timeCommitment: user.onboardingData.timeCommitment,
       currentSkills: user.profile?.currentSkills || [],
-      experience: user.profile?.experience || ''
+      experience: user.profile?.experience || "",
     };
 
     const roadmap = new CareerRoadmap({
@@ -282,16 +334,17 @@ Return ONLY the JSON object, no additional text.`;
       description: roadmapData.description,
       userProfile,
       generatedBy: {
-        model: 'gemini-pro',
+        model: "gemini-pro",
         prompt,
-        generatedAt: new Date()
+        generatedAt: new Date(),
       },
       primaryCareerPath: roadmapData.primaryCareerPath,
       alternativeCareerPaths: roadmapData.alternativeCareerPaths || [],
       phases: roadmapData.phases,
       matchScore: roadmapData.matchScore || 75,
-      personalizedRecommendations: roadmapData.personalizedRecommendations || [],
-      nextSteps: roadmapData.nextSteps || []
+      personalizedRecommendations:
+        roadmapData.personalizedRecommendations || [],
+      nextSteps: roadmapData.nextSteps || [],
     });
 
     await roadmap.save();
@@ -307,26 +360,26 @@ Return ONLY the JSON object, no additional text.`;
       careerStage: user.onboardingData.careerStage,
       interests: user.onboardingData.interests,
       goals: user.onboardingData.goals,
-      timeCommitment: user.onboardingData.timeCommitment
+      timeCommitment: user.onboardingData.timeCommitment,
     };
 
     // Look for exact match first
     const exactMatch = await CareerRoadmap.findOne({
       userId: user._id,
-      status: 'active',
-      'userProfile.currentLevel': userProfile.currentLevel,
-      'userProfile.careerStage': userProfile.careerStage,
-      'userProfile.timeCommitment': userProfile.timeCommitment
+      status: "active",
+      "userProfile.currentLevel": userProfile.currentLevel,
+      "userProfile.careerStage": userProfile.careerStage,
+      "userProfile.timeCommitment": userProfile.timeCommitment,
     }).sort({ createdAt: -1 });
 
     if (exactMatch) {
       // Check if interests and goals are similar enough (80% overlap)
       const interestOverlap = this.calculateOverlap(
-        exactMatch.userProfile.interests, 
+        exactMatch.userProfile.interests,
         userProfile.interests
       );
       const goalOverlap = this.calculateOverlap(
-        exactMatch.userProfile.goals, 
+        exactMatch.userProfile.goals,
         userProfile.goals
       );
 
@@ -343,28 +396,28 @@ Return ONLY the JSON object, no additional text.`;
    */
   calculateOverlap(arr1, arr2) {
     if (!arr1 || !arr2 || arr1.length === 0 || arr2.length === 0) return 0;
-    
+
     const set1 = new Set(arr1);
     const set2 = new Set(arr2);
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
-    
+    const intersection = new Set([...set1].filter((x) => set2.has(x)));
+
     return intersection.size / Math.max(set1.size, set2.size);
   }
 
   /**
    * Regenerate roadmap with updated user data
    */
-  async regenerateRoadmap(userId, reason = 'User profile updated') {
+  async regenerateRoadmap(userId, reason = "User profile updated") {
     try {
       // Invalidate existing cache
       await roadmapCacheService.invalidateUserCache(userId);
 
       // Get updated user data
-      const User = (await import('../models/User.js')).default;
+      const User = (await import("../models/User.js")).default;
       const user = await User.findById(userId);
-      
+
       if (!user || !user.onboardingCompleted) {
-        throw new Error('User not found or onboarding not completed');
+        throw new Error("User not found or onboarding not completed");
       }
 
       // Generate new roadmap
@@ -375,7 +428,7 @@ Return ONLY the JSON object, no additional text.`;
 
       return roadmap;
     } catch (error) {
-      console.error('Roadmap regeneration error:', error);
+      console.error("Roadmap regeneration error:", error);
       throw error;
     }
   }
@@ -386,29 +439,35 @@ Return ONLY the JSON object, no additional text.`;
   async getNextVersion(userId) {
     const latestRoadmap = await CareerRoadmap.findOne({ userId })
       .sort({ version: -1 })
-      .select('version');
-    
+      .select("version");
+
     return (latestRoadmap?.version || 0) + 1;
   }
 
   /**
    * Update milestone completion
    */
-  async updateMilestoneProgress(roadmapId, phaseId, milestoneId, completed, notes = '') {
+  async updateMilestoneProgress(
+    roadmapId,
+    phaseId,
+    milestoneId,
+    completed,
+    notes = ""
+  ) {
     try {
       const roadmap = await CareerRoadmap.findById(roadmapId);
       if (!roadmap) {
-        throw new Error('Roadmap not found');
+        throw new Error("Roadmap not found");
       }
 
-      const phase = roadmap.phases.find(p => p.id === phaseId);
+      const phase = roadmap.phases.find((p) => p.id === phaseId);
       if (!phase) {
-        throw new Error('Phase not found');
+        throw new Error("Phase not found");
       }
 
-      const milestone = phase.milestones.find(m => m.id === milestoneId);
+      const milestone = phase.milestones.find((m) => m.id === milestoneId);
       if (!milestone) {
-        throw new Error('Milestone not found');
+        throw new Error("Milestone not found");
       }
 
       milestone.completed = completed;
@@ -425,7 +484,7 @@ Return ONLY the JSON object, no additional text.`;
 
       return roadmap;
     } catch (error) {
-      console.error('Milestone update error:', error);
+      console.error("Milestone update error:", error);
       throw error;
     }
   }
@@ -436,7 +495,7 @@ Return ONLY the JSON object, no additional text.`;
   async getRoadmapAnalytics(userId) {
     try {
       const roadmaps = await CareerRoadmap.find({ userId });
-      
+
       if (roadmaps.length === 0) {
         return {
           totalRoadmaps: 0,
@@ -444,46 +503,59 @@ Return ONLY the JSON object, no additional text.`;
           totalMilestones: 0,
           averageProgress: 0,
           mostActivePhase: null,
-          recommendations: []
+          recommendations: [],
         };
       }
 
-      const activeRoadmap = roadmaps.find(r => r.status === 'active') || roadmaps[roadmaps.length - 1];
-      
+      const activeRoadmap =
+        roadmaps.find((r) => r.status === "active") ||
+        roadmaps[roadmaps.length - 1];
+
       const totalMilestones = activeRoadmap.phases.reduce(
-        (sum, phase) => sum + phase.milestones.length, 0
-      );
-      
-      const completedMilestones = activeRoadmap.phases.reduce(
-        (sum, phase) => sum + phase.milestones.filter(m => m.completed).length, 0
+        (sum, phase) => sum + phase.milestones.length,
+        0
       );
 
-      const phaseProgress = activeRoadmap.phases.map(phase => ({
+      const completedMilestones = activeRoadmap.phases.reduce(
+        (sum, phase) =>
+          sum + phase.milestones.filter((m) => m.completed).length,
+        0
+      );
+
+      const phaseProgress = activeRoadmap.phases.map((phase) => ({
         phaseId: phase.id,
         title: phase.title,
-        completed: phase.milestones.filter(m => m.completed).length,
+        completed: phase.milestones.filter((m) => m.completed).length,
         total: phase.milestones.length,
-        percentage: phase.milestones.length > 0 
-          ? Math.round((phase.milestones.filter(m => m.completed).length / phase.milestones.length) * 100)
-          : 0
+        percentage:
+          phase.milestones.length > 0
+            ? Math.round(
+                (phase.milestones.filter((m) => m.completed).length /
+                  phase.milestones.length) *
+                  100
+              )
+            : 0,
       }));
 
-      const mostActivePhase = phaseProgress.reduce((max, phase) => 
-        phase.completed > max.completed ? phase : max, phaseProgress[0]
+      const mostActivePhase = phaseProgress.reduce(
+        (max, phase) => (phase.completed > max.completed ? phase : max),
+        phaseProgress[0]
       );
 
       return {
         totalRoadmaps: roadmaps.length,
         completedMilestones,
         totalMilestones,
-        averageProgress: totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0,
+        averageProgress:
+          totalMilestones > 0
+            ? Math.round((completedMilestones / totalMilestones) * 100)
+            : 0,
         mostActivePhase,
         phaseProgress,
-        recommendations: this.generateProgressRecommendations(activeRoadmap)
+        recommendations: this.generateProgressRecommendations(activeRoadmap),
       };
-
     } catch (error) {
-      console.error('Analytics error:', error);
+      console.error("Analytics error:", error);
       throw error;
     }
   }
@@ -493,37 +565,42 @@ Return ONLY the JSON object, no additional text.`;
    */
   generateProgressRecommendations(roadmap) {
     const recommendations = [];
-    
+
     // Find incomplete high-priority milestones
-    roadmap.phases.forEach(phase => {
+    roadmap.phases.forEach((phase) => {
       const incompleteMilestones = phase.milestones.filter(
-        m => !m.completed && m.priority === 'high'
+        (m) => !m.completed && m.priority === "high"
       );
-      
+
       if (incompleteMilestones.length > 0) {
         recommendations.push({
           type: `Focus on high-priority milestones in ${phase.title}`,
-          category: 'learning',
-          priority: 'high',
-          action: `Complete ${incompleteMilestones[0].title}`
+          category: "learning",
+          priority: "high",
+          action: `Complete ${incompleteMilestones[0].title}`,
         });
       }
     });
 
     // Check for stalled progress
-    const recentCompletions = roadmap.phases.flatMap(phase => 
-      phase.milestones.filter(m => 
-        m.completed && m.completedAt && 
-        (Date.now() - m.completedAt.getTime()) < (30 * 24 * 60 * 60 * 1000) // Last 30 days
+    const recentCompletions = roadmap.phases.flatMap((phase) =>
+      phase.milestones.filter(
+        (m) =>
+          m.completed &&
+          m.completedAt &&
+          Date.now() - m.completedAt.getTime() < 30 * 24 * 60 * 60 * 1000 // Last 30 days
       )
     );
 
-    if (recentCompletions.length === 0 && roadmap.overallProgress.completedMilestones > 0) {
+    if (
+      recentCompletions.length === 0 &&
+      roadmap.overallProgress.completedMilestones > 0
+    ) {
       recommendations.push({
-        type: 'Re-engage with your roadmap - no recent progress detected',
-        category: 'motivation',
-        priority: 'medium',
-        action: 'Review and update your next steps'
+        type: "Re-engage with your roadmap - no recent progress detected",
+        category: "motivation",
+        priority: "medium",
+        action: "Review and update your next steps",
       });
     }
 

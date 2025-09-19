@@ -1,4 +1,4 @@
-import CareerRoadmap from '../models/CareerRoadmap.js';
+import CareerRoadmap from "../models/CareerRoadmap.js";
 
 class RoadmapCacheService {
   constructor() {
@@ -17,17 +17,17 @@ class RoadmapCacheService {
       interests,
       goals,
       timeCommitment,
-      preferredLearningStyle
+      preferredLearningStyle,
     } = userProfile;
 
     // Sort arrays to ensure consistent key generation
-    const sortedInterests = [...(interests || [])].sort().join('_');
-    const sortedGoals = [...(goals || [])].sort().join('_');
+    const sortedInterests = [...(interests || [])].sort().join("_");
+    const sortedGoals = [...(goals || [])].sort().join("_");
 
     const key = `roadmap_${currentLevel}_${careerStage}_${sortedInterests}_${sortedGoals}_${timeCommitment}_${preferredLearningStyle}`;
-    
+
     // Clean key to remove special characters
-    return key.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+    return key.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
   }
 
   /**
@@ -35,19 +35,19 @@ class RoadmapCacheService {
    */
   getFromMemoryCache(cacheKey) {
     const cached = this.memoryCache.get(cacheKey);
-    
+
     if (!cached) return null;
-    
+
     // Check if cache has expired
     if (Date.now() - cached.timestamp > this.cacheTimeout) {
       this.memoryCache.delete(cacheKey);
       return null;
     }
-    
+
     // Update access time
     cached.lastAccessed = Date.now();
     cached.accessCount = (cached.accessCount || 0) + 1;
-    
+
     return cached.roadmap;
   }
 
@@ -64,7 +64,7 @@ class RoadmapCacheService {
       roadmap,
       timestamp: Date.now(),
       lastAccessed: Date.now(),
-      accessCount: 1
+      accessCount: 1,
     });
   }
 
@@ -72,9 +72,10 @@ class RoadmapCacheService {
    * Evict oldest items from memory cache
    */
   evictOldestItems(count) {
-    const entries = Array.from(this.memoryCache.entries())
-      .sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
-    
+    const entries = Array.from(this.memoryCache.entries()).sort(
+      (a, b) => a[1].lastAccessed - b[1].lastAccessed
+    );
+
     for (let i = 0; i < count && i < entries.length; i++) {
       this.memoryCache.delete(entries[i][0]);
     }
@@ -86,23 +87,23 @@ class RoadmapCacheService {
   async findCachedRoadmap(userProfile, userId) {
     try {
       const cacheKey = this.generateCacheKey(userProfile);
-      
+
       // First check memory cache
       const memoryCached = this.getFromMemoryCache(cacheKey);
       if (memoryCached) {
-        console.log('Roadmap found in memory cache');
+        console.log("Roadmap found in memory cache");
         return memoryCached;
       }
 
       // Check database cache for exact match
       const exactMatch = await CareerRoadmap.findOne({
         cacheKey,
-        status: 'active',
-        createdAt: { $gte: new Date(Date.now() - this.cacheTimeout) }
+        status: "active",
+        createdAt: { $gte: new Date(Date.now() - this.cacheTimeout) },
       }).sort({ accessCount: -1, createdAt: -1 });
 
       if (exactMatch) {
-        console.log('Exact match found in database cache');
+        console.log("Exact match found in database cache");
         // Store in memory cache for faster future access
         this.setMemoryCache(cacheKey, exactMatch);
         return exactMatch;
@@ -111,7 +112,7 @@ class RoadmapCacheService {
       // Look for similar roadmaps
       const similarRoadmap = await this.findSimilarRoadmap(userProfile, userId);
       if (similarRoadmap) {
-        console.log('Similar roadmap found, reusing with adaptations');
+        console.log("Similar roadmap found, reusing with adaptations");
         // Store in memory cache
         this.setMemoryCache(cacheKey, similarRoadmap);
         return similarRoadmap;
@@ -119,7 +120,7 @@ class RoadmapCacheService {
 
       return null;
     } catch (error) {
-      console.error('Cache lookup error:', error);
+      console.error("Cache lookup error:", error);
       return null;
     }
   }
@@ -129,29 +130,29 @@ class RoadmapCacheService {
    */
   async findSimilarRoadmap(userProfile, userId) {
     try {
-      const {
-        currentLevel,
-        careerStage,
-        interests,
-        goals,
-        timeCommitment
-      } = userProfile;
+      const { currentLevel, careerStage, interests, goals, timeCommitment } =
+        userProfile;
 
       // Find roadmaps with high similarity score
       const candidates = await CareerRoadmap.find({
-        status: 'active',
-        'userProfile.currentLevel': currentLevel,
-        'userProfile.careerStage': careerStage,
-        'userProfile.timeCommitment': timeCommitment,
-        createdAt: { $gte: new Date(Date.now() - this.cacheTimeout) }
-      }).sort({ accessCount: -1, createdAt: -1 }).limit(20);
+        status: "active",
+        "userProfile.currentLevel": currentLevel,
+        "userProfile.careerStage": careerStage,
+        "userProfile.timeCommitment": timeCommitment,
+        createdAt: { $gte: new Date(Date.now() - this.cacheTimeout) },
+      })
+        .sort({ accessCount: -1, createdAt: -1 })
+        .limit(20);
 
       let bestMatch = null;
       let bestScore = 0.7; // Minimum similarity threshold
 
       for (const candidate of candidates) {
-        const similarity = this.calculateSimilarityScore(userProfile, candidate.userProfile);
-        
+        const similarity = this.calculateSimilarityScore(
+          userProfile,
+          candidate.userProfile
+        );
+
         if (similarity > bestScore) {
           bestScore = similarity;
           bestMatch = candidate;
@@ -160,7 +161,7 @@ class RoadmapCacheService {
 
       return bestMatch;
     } catch (error) {
-      console.error('Similar roadmap search error:', error);
+      console.error("Similar roadmap search error:", error);
       return null;
     }
   }
@@ -224,7 +225,7 @@ class RoadmapCacheService {
 
     const set1 = new Set(arr1);
     const set2 = new Set(arr2);
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const intersection = new Set([...set1].filter((x) => set2.has(x)));
 
     return intersection.size / Math.max(set1.size, set2.size);
   }
@@ -236,20 +237,24 @@ class RoadmapCacheService {
     try {
       // Remove from memory cache
       for (const [key, value] of this.memoryCache.entries()) {
-        if (value.roadmap && value.roadmap.userId && value.roadmap.userId.toString() === userId.toString()) {
+        if (
+          value.roadmap &&
+          value.roadmap.userId &&
+          value.roadmap.userId.toString() === userId.toString()
+        ) {
           this.memoryCache.delete(key);
         }
       }
 
       // Archive old roadmaps in database
       await CareerRoadmap.updateMany(
-        { userId, status: 'active' },
-        { status: 'archived' }
+        { userId, status: "active" },
+        { status: "archived" }
       );
 
       console.log(`Cache invalidated for user ${userId}`);
     } catch (error) {
-      console.error('Cache invalidation error:', error);
+      console.error("Cache invalidation error:", error);
     }
   }
 
@@ -277,20 +282,26 @@ class RoadmapCacheService {
    */
   getCacheStats() {
     const memoryEntries = Array.from(this.memoryCache.values());
-    
+
     return {
       memoryCacheSize: this.memoryCache.size,
       maxCacheSize: this.maxCacheSize,
       cacheHitRate: this.calculateHitRate(),
-      averageAccessCount: memoryEntries.length > 0 
-        ? memoryEntries.reduce((sum, entry) => sum + (entry.accessCount || 0), 0) / memoryEntries.length 
-        : 0,
-      oldestEntry: memoryEntries.length > 0 
-        ? Math.min(...memoryEntries.map(entry => entry.timestamp)) 
-        : null,
-      newestEntry: memoryEntries.length > 0 
-        ? Math.max(...memoryEntries.map(entry => entry.timestamp)) 
-        : null
+      averageAccessCount:
+        memoryEntries.length > 0
+          ? memoryEntries.reduce(
+              (sum, entry) => sum + (entry.accessCount || 0),
+              0
+            ) / memoryEntries.length
+          : 0,
+      oldestEntry:
+        memoryEntries.length > 0
+          ? Math.min(...memoryEntries.map((entry) => entry.timestamp))
+          : null,
+      newestEntry:
+        memoryEntries.length > 0
+          ? Math.max(...memoryEntries.map((entry) => entry.timestamp))
+          : null,
     };
   }
 
@@ -302,9 +313,12 @@ class RoadmapCacheService {
     // In a production system, you'd want to track hits/misses more accurately
     const entries = Array.from(this.memoryCache.values());
     if (entries.length === 0) return 0;
-    
-    const totalAccesses = entries.reduce((sum, entry) => sum + (entry.accessCount || 0), 0);
-    return totalAccesses > 0 ? (totalAccesses / entries.length) / 10 : 0; // Rough estimate
+
+    const totalAccesses = entries.reduce(
+      (sum, entry) => sum + (entry.accessCount || 0),
+      0
+    );
+    return totalAccesses > 0 ? totalAccesses / entries.length / 10 : 0; // Rough estimate
   }
 
   /**
@@ -313,11 +327,11 @@ class RoadmapCacheService {
   async preloadPopularRoadmaps() {
     try {
       const popular = await CareerRoadmap.find({
-        status: 'active',
-        accessCount: { $gte: 5 }
+        status: "active",
+        accessCount: { $gte: 5 },
       })
-      .sort({ accessCount: -1, createdAt: -1 })
-      .limit(50);
+        .sort({ accessCount: -1, createdAt: -1 })
+        .limit(50);
 
       for (const roadmap of popular) {
         if (roadmap.cacheKey) {
@@ -327,7 +341,7 @@ class RoadmapCacheService {
 
       console.log(`Preloaded ${popular.length} popular roadmaps into cache`);
     } catch (error) {
-      console.error('Preload error:', error);
+      console.error("Preload error:", error);
     }
   }
 
@@ -345,7 +359,7 @@ class RoadmapCacheService {
       this.preloadPopularRoadmaps();
     }, 6 * 60 * 60 * 1000);
 
-    console.log('Periodic cache cleanup started');
+    console.log("Periodic cache cleanup started");
   }
 }
 
