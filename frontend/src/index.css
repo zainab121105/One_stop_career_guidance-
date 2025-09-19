@@ -19,6 +19,32 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
   
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Ensure navbar stays within viewport */
+  .navbar-container {
+    max-width: 100vw;
+    overflow: hidden;
+  }
+  
+  /* Smooth scrolling for navigation items */
+  .nav-scroll {
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  
   .gradient-text {
     background: linear-gradient(135deg, #3b82f6, #10b981);
     -webkit-background-clip: text;

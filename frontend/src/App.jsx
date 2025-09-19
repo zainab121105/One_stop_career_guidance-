@@ -5,6 +5,15 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import CareerRoadmaps from './pages/CareerRoadmaps';
+import AICounseling from './pages/AICounseling';
+import ProgressTracker from './pages/ProgressTracker';
+import Scholarships from './pages/Scholarships';
+import Assessment from './pages/Assessment';
+import Community from './pages/Community';
+import CollegeFinder from './pages/CollegeFinder';
+import CareerRecommendations from './pages/CareerRecommendations';
+import JobAgent from './pages/JobAgent';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthProvider from './context/AuthContext';
 
@@ -46,6 +55,51 @@ function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/career-roadmaps" element={
+            <ProtectedRoute>
+              <CareerRoadmaps />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/ai-counseling" element={
+            <ProtectedRoute>
+              <AICounseling />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/progress-tracker" element={
+            <ProtectedRoute>
+              <ProgressTracker />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/scholarships" element={
+            <ProtectedRoute>
+              <Scholarships />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/assessment" element={
+            <ProtectedRoute>
+              <Assessment />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/community" element={
+            <ProtectedRoute>
+              <Community />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/college-finder" element={
+            <ProtectedRoute>
+              <CollegeFinder />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/career-recommendations" element={
+            <ProtectedRoute>
+              <CareerRecommendations />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/job-agent" element={
+            <ProtectedRoute>
+              <JobAgent />
             </ProtectedRoute>
           } />
         </Routes>

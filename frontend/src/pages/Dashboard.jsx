@@ -13,9 +13,17 @@ import {
   Star,
   Award,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Map,
+  Bot,
+  GraduationCap,
+  Users,
+  School,
+  Lightbulb,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import DashboardNavbar from '../components/DashboardNavbar';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -66,37 +74,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold">CP</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">CareerPath</h1>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Bell className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-              <button
-                onClick={logout}
-                className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+      <DashboardNavbar />
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -112,6 +91,42 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Quick Access to Features */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Access</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[
+              { name: 'Career Roadmaps', path: '/dashboard/career-roadmaps', icon: Map, color: 'from-blue-500 to-cyan-500' },
+              { name: 'AI Counseling', path: '/dashboard/ai-counseling', icon: Bot, color: 'from-purple-500 to-pink-500' },
+              { name: 'Progress Tracker', path: '/dashboard/progress-tracker', icon: Trophy, color: 'from-yellow-500 to-orange-500' },
+              { name: 'Scholarships', path: '/dashboard/scholarships', icon: GraduationCap, color: 'from-green-500 to-teal-500' },
+              { name: 'Assessment', path: '/dashboard/assessment', icon: Target, color: 'from-indigo-500 to-purple-500' },
+              { name: 'Community', path: '/dashboard/community', icon: Users, color: 'from-blue-500 to-indigo-500' },
+              { name: 'College Finder', path: '/dashboard/college-finder', icon: School, color: 'from-green-500 to-blue-500' },
+              { name: 'Recommendations', path: '/dashboard/career-recommendations', icon: Lightbulb, color: 'from-purple-500 to-indigo-500' },
+              { name: 'Job Agent', path: '/dashboard/job-agent', icon: Briefcase, color: 'from-green-500 to-blue-500' }
+            ].map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <a
+                  key={index}
+                  href={feature.path}
+                  className="group block p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-primary-300 transition-all duration-200"
+                >
+                  <div className="text-center">
+                    <div className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-lg flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-200`}>
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <h4 className="text-sm font-medium text-gray-900 group-hover:text-primary-600 transition-colors">
+                      {feature.name}
+                    </h4>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </div>
 
