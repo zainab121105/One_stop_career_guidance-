@@ -6,9 +6,11 @@ import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 
 // Import routes
-import authRoutes from "./routes/auth.js";
-import userRoutes from "./routes/user.js";
-import roadmapRoutes from "./routes/roadmap.js";
+
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/user.js';
+import roadmapRoutes from './routes/roadmap.js';
+import aiCounselingRoutes from './routes/aiCounseling.js';
 
 dotenv.config();
 
@@ -59,9 +61,12 @@ const connectDB = async () => {
 connectDB();
 
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/roadmap", roadmapRoutes);
+
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/roadmap', roadmapRoutes);
+app.use('/api/ai-counseling', aiCounselingRoutes);
+
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
