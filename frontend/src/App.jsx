@@ -9,6 +9,8 @@ import CareerRoadmaps from './pages/CareerRoadmaps';
 import AICounseling from './pages/AICounseling';
 import ProgressTracker from './pages/ProgressTracker';
 import Scholarships from './pages/Scholarships';
+// Temporary debug import
+import './utils/debugEnv.js';
 import Assessment from './pages/Assessment';
 import Community from './pages/Community';
 import CollegeFinder from './pages/CollegeFinder';
