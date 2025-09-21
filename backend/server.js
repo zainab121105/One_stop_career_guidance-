@@ -7,10 +7,10 @@ import dotenv from "dotenv";
 
 // Import routes
 
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/user.js';
-import roadmapRoutes from './routes/roadmap.js';
-import aiCounselingRoutes from './routes/aiCounseling.js';
+import authRoutes from "./routes/auth.js";
+import userRoutes from "./routes/user.js";
+import roadmapRoutes from "./routes/roadmap.js";
+import aiCounselingRoutes from "./routes/aiCounseling.js";
 
 dotenv.config();
 
@@ -29,9 +29,15 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS configuration
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://one-stop-career-guidance-teal.vercel.app",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -62,11 +68,10 @@ connectDB();
 
 // Routes
 
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/roadmap', roadmapRoutes);
-app.use('/api/ai-counseling', aiCounselingRoutes);
-
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/roadmap", roadmapRoutes);
+app.use("/api/ai-counseling", aiCounselingRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
