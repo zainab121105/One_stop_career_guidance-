@@ -1,17 +1,17 @@
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  timeout: 10000,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  timeout: import.meta.env.VITE_API_TIMEOUT || 10000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,8 +29,8 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      localStorage.removeItem("token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
@@ -40,17 +40,17 @@ api.interceptors.response.use(
 export const aiCounselingAPI = {
   // Send a message to AI counselor
   sendMessage: async (message, sessionId = null) => {
-    const response = await api.post('/ai-counseling/chat', {
+    const response = await api.post("/ai-counseling/chat", {
       message,
-      sessionId
+      sessionId,
     });
     return response.data;
   },
 
   // Get user's chat sessions
-  getSessions: async (limit = 20, offset = 0, status = 'active') => {
-    const response = await api.get('/ai-counseling/sessions', {
-      params: { limit, offset, status }
+  getSessions: async (limit = 20, offset = 0, status = "active") => {
+    const response = await api.get("/ai-counseling/sessions", {
+      params: { limit, offset, status },
     });
     return response.data;
   },
@@ -63,7 +63,10 @@ export const aiCounselingAPI = {
 
   // Update chat session
   updateSession: async (sessionId, updates) => {
-    const response = await api.put(`/ai-counseling/sessions/${sessionId}`, updates);
+    const response = await api.put(
+      `/ai-counseling/sessions/${sessionId}`,
+      updates
+    );
     return response.data;
   },
 
@@ -75,23 +78,23 @@ export const aiCounselingAPI = {
 
   // Generate assessment questions
   generateAssessmentQuestions: async () => {
-    const response = await api.post('/ai-counseling/assessment/questions');
+    const response = await api.post("/ai-counseling/assessment/questions");
     return response.data;
   },
 
   // Analyze assessment responses
   analyzeAssessmentResponses: async (responses) => {
-    const response = await api.post('/ai-counseling/assessment/analyze', {
-      responses
+    const response = await api.post("/ai-counseling/assessment/analyze", {
+      responses,
     });
     return response.data;
   },
 
   // Get counseling statistics
   getStats: async () => {
-    const response = await api.get('/ai-counseling/stats');
+    const response = await api.get("/ai-counseling/stats");
     return response.data;
-  }
+  },
 };
 
 export default api;

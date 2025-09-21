@@ -78,7 +78,7 @@ class RoadmapGenerationService {
       console.error("Error details:", {
         name: error.name,
         message: error.message,
-        stack: error.stack?.split('\n').slice(0, 5) // First 5 lines of stack trace
+        stack: error.stack?.split("\n").slice(0, 5), // First 5 lines of stack trace
       });
       throw error; // Preserve the original error instead of generic message
     }
@@ -187,6 +187,15 @@ class RoadmapGenerationService {
   ]
 }
 
+**IMPORTANT VALIDATION RULES:**
+- personalizedRecommendations.category MUST be one of: "learning", "networking", "projects", "certifications", "experience", "portfolio", "skills", "tools", "inspiration", "budget", "career", "personal", "resources", "planning"
+- milestones.category MUST be one of: "skill", "education", "experience", "certification", "project", "networking", "career", "tool", "portfolio", "learning", "practice", "assessment"
+- All priority fields MUST be: "high", "medium", or "low"
+- All deadline dates MUST be in YYYY-MM-DD format
+- All importance fields MUST be: "critical", "important", or "optional"
+- For milestones: Use "project" (singular), "skill" (singular), "certification" (singular), "tool" (singular)
+- For recommendations: Use "projects" (plural), "skills" (plural), "certifications" (plural), "tools" (plural)
+
 **CUSTOMIZATION REQUIREMENTS:**
 1. **Learning Style Adaptation:**
    - Visual: Include infographics, video courses, visual programming tools
@@ -284,7 +293,10 @@ Return ONLY the complete JSON object, no markdown or extra text.`;
   }
 
   /**
-   * Validate roadmap data structure
+   * Validate roadmap data structure and fix common category issues
+   *
+   * MILESTONE CATEGORIES (singular): skill, education, experience, certification, project, networking, career, tool, portfolio, learning, practice, assessment
+   * RECOMMENDATION CATEGORIES (plural): learning, networking, projects, certifications, experience, portfolio, skills, tools, inspiration, budget, career, personal, resources, planning
    */
   validateRoadmapData(data) {
     const requiredFields = [
@@ -311,6 +323,118 @@ Return ONLY the complete JSON object, no markdown or extra text.`;
         throw new Error(`Phase ${index} missing milestones array`);
       }
     });
+
+    // Validate and fix milestone categories
+    const validMilestoneCategories = [
+      "skill",
+      "education",
+      "experience",
+      "certification",
+      "project",
+      "networking",
+      "career",
+      "tool",
+      "portfolio",
+      "learning",
+      "practice",
+      "assessment",
+    ];
+
+    // Fix milestone categories
+    data.phases.forEach((phase, phaseIndex) => {
+      if (phase.milestones && Array.isArray(phase.milestones)) {
+        phase.milestones.forEach((milestone, milestoneIndex) => {
+          if (milestone.category) {
+            // Handle common variations and mappings
+            const categoryMappings = {
+              projects: "project",
+              certifications: "certification",
+              skills: "skill",
+              tools: "tool",
+              educations: "education",
+              experiences: "experience",
+            };
+
+            if (categoryMappings[milestone.category]) {
+              const oldCategory = milestone.category;
+              milestone.category = categoryMappings[milestone.category];
+              console.warn(
+                `Fixed milestone category from "${oldCategory}" to "${milestone.category}" in phase ${phaseIndex}, milestone ${milestoneIndex}`
+              );
+            } else if (!validMilestoneCategories.includes(milestone.category)) {
+              console.warn(
+                `Invalid milestone category "${milestone.category}" in phase ${phaseIndex}, milestone ${milestoneIndex}, changing to "skill"`
+              );
+              milestone.category = "skill"; // Default fallback
+            }
+          }
+        });
+      }
+    });
+
+    // Validate and fix personalizedRecommendations categories
+    const validCategories = [
+      "learning",
+      "networking",
+      "projects",
+      "certifications",
+      "experience",
+      "portfolio",
+      "skills",
+      "tools",
+      "inspiration",
+      "budget",
+      "career",
+      "personal",
+      "resources",
+      "planning",
+    ];
+
+    if (
+      data.personalizedRecommendations &&
+      Array.isArray(data.personalizedRecommendations)
+    ) {
+      data.personalizedRecommendations.forEach((rec, index) => {
+        if (rec.category) {
+          // Handle common variations and mappings
+          const categoryMappings = {
+            skill: "skills",
+            tool: "tools",
+            certification: "certifications",
+            project: "projects",
+          };
+
+          if (categoryMappings[rec.category]) {
+            const oldCategory = rec.category;
+            rec.category = categoryMappings[rec.category];
+            console.warn(
+              `Fixed recommendation category from "${oldCategory}" to "${rec.category}" at index ${index}`
+            );
+          } else if (!validCategories.includes(rec.category)) {
+            console.warn(
+              `Invalid recommendation category "${rec.category}" at index ${index}, changing to "career"`
+            );
+            rec.category = "career"; // Default fallback
+          }
+        }
+      });
+    }
+
+    // Validate and fix priority values
+    const validPriorities = ["high", "medium", "low"];
+    if (
+      data.personalizedRecommendations &&
+      Array.isArray(data.personalizedRecommendations)
+    ) {
+      data.personalizedRecommendations.forEach((rec, index) => {
+        if (rec.priority && !validPriorities.includes(rec.priority)) {
+          console.warn(
+            `Invalid priority "${rec.priority}" at index ${index}, changing to "medium"`
+          );
+          rec.priority = "medium"; // Default fallback
+        }
+      });
+    }
   }
 
   /**
@@ -347,8 +471,23 @@ Return ONLY the complete JSON object, no markdown or extra text.`;
       nextSteps: roadmapData.nextSteps || [],
     });
 
-    await roadmap.save();
-    return roadmap;
+    try {
+      await roadmap.save();
+      return roadmap;
+    } catch (error) {
+      // Handle duplicate key error for cacheKey
+      if (error.code === 11000 && error.keyPattern?.cacheKey) {
+        console.log("🔄 Duplicate cache key detected, regenerating...");
+        // Regenerate cache key with additional uniqueness
+        roadmap.cacheKey =
+          roadmap.generateCacheKey() +
+          "_" +
+          Math.random().toString(36).substr(2, 9);
+        await roadmap.save();
+        return roadmap;
+      }
+      throw error; // Re-throw other errors
+    }
   }
 
   /**

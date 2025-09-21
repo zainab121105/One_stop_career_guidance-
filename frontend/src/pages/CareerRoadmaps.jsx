@@ -37,7 +37,7 @@ const CareerRoadmaps = () => {
     try {
       setLoading(true);
       const response = await roadmapService.getRoadmaps();
-      
+
       // Handle the response - backend returns a single roadmap, not an array
       if (response.roadmap) {
         const roadmapArray = [response.roadmap];
@@ -51,13 +51,20 @@ const CareerRoadmaps = () => {
         setShowRoadmapList(true);
       }
     } catch (err) {
-      console.error("Error loading roadmaps:", err);
-      // If error is 404 (no roadmap found), show the generate button
-      if (err.response?.status === 404) {
+      // If error is 404 (no roadmap found), this is expected behavior
+      if (
+        err.response?.status === 404 ||
+        err.response?.data?.code === "NO_ROADMAP"
+      ) {
+        // Don't log this as an error since it's expected when user has no roadmaps
+        console.log("No active roadmaps found - showing generation interface");
         setRoadmaps([]);
         setCurrentRoadmap(null);
         setShowRoadmapList(true);
+        setError(null); // Clear any previous errors since this is expected
       } else {
+        // Only log actual errors
+        console.error("Error loading roadmaps:", err);
         setError("Failed to load roadmaps. Please try again.");
       }
     } finally {
@@ -73,10 +80,12 @@ const CareerRoadmaps = () => {
 
       // Check if the response contains a roadmap (successful generation)
       if (response.roadmap) {
+        // Set the roadmap data directly from generation response
+        const roadmapArray = [response.roadmap];
+        setRoadmaps(roadmapArray);
         setCurrentRoadmap(response.roadmap);
         setShowRoadmapList(false);
-        // Refresh the roadmaps list
-        await loadRoadmaps();
+        // No need to call loadRoadmaps() since we already have the fresh data
       } else {
         throw new Error(response.message || "Failed to generate roadmap");
       }
@@ -98,13 +107,15 @@ const CareerRoadmaps = () => {
       setGenerating(true);
       setError(null);
       const response = await roadmapService.regenerateRoadmap(
-        currentRoadmap._id,
         "User requested regeneration"
       );
 
       if (response.roadmap) {
+        // Set the roadmap data directly from regeneration response
+        const roadmapArray = [response.roadmap];
+        setRoadmaps(roadmapArray);
         setCurrentRoadmap(response.roadmap);
-        await loadRoadmaps();
+        // No need to call loadRoadmaps() since we already have the fresh data
       } else {
         throw new Error(response.message || "Failed to regenerate roadmap");
       }
@@ -116,17 +127,33 @@ const CareerRoadmaps = () => {
     }
   };
 
-  const handleMilestoneUpdate = async (milestoneId, completed) => {
+  const handleMilestoneUpdate = async (phaseId, milestoneId, completed) => {
     if (!currentRoadmap) return;
 
     try {
       const response = await roadmapService.updateMilestone(
-        currentRoadmap._id,
+        currentRoadmap._id || currentRoadmap.id,
+        phaseId,
         milestoneId,
         completed
       );
-      if (response.roadmap) {
-        setCurrentRoadmap(response.roadmap);
+
+      if (response.overallProgress) {
+        // Update the current roadmap with new progress
+        setCurrentRoadmap((prev) => ({
+          ...prev,
+          overallProgress: response.overallProgress,
+        }));
+
+        // Also update the roadmaps array
+        setRoadmaps((prev) =>
+          prev.map((roadmap) =>
+            roadmap._id === currentRoadmap._id ||
+            roadmap.id === currentRoadmap.id
+              ? { ...roadmap, overallProgress: response.overallProgress }
+              : roadmap
+          )
+        );
       }
     } catch (err) {
       console.error("Error updating milestone:", err);

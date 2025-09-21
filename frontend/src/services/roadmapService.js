@@ -27,7 +27,28 @@ class RoadmapService {
       const response = await api.get("/roadmap");
       return response.data;
     } catch (error) {
-      console.error("Error fetching roadmaps:", error);
+      // Don't log 404 errors for roadmaps since it's expected when user has no roadmaps
+      if (error.response?.status !== 404) {
+        console.error("Error fetching roadmaps:", error);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get all user's roadmaps (including archived)
+   * @param {number} limit - Number of roadmaps to fetch
+   * @param {number} page - Page number for pagination
+   * @returns {Promise} - Promise resolving to paginated roadmaps
+   */
+  async getAllRoadmaps(limit = 10, page = 1) {
+    try {
+      const response = await api.get(
+        `/roadmap/all?limit=${limit}&page=${page}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all roadmaps:", error);
       throw error;
     }
   }
@@ -50,16 +71,25 @@ class RoadmapService {
   /**
    * Update milestone progress
    * @param {string} roadmapId - The roadmap ID
+   * @param {string} phaseId - The phase ID
    * @param {string} milestoneId - The milestone ID
    * @param {boolean} completed - Whether the milestone is completed
+   * @param {string} notes - Optional notes
    * @returns {Promise} - Promise resolving to updated roadmap
    */
-  async updateMilestone(roadmapId, milestoneId, completed) {
+  async updateMilestone(
+    roadmapId,
+    phaseId,
+    milestoneId,
+    completed,
+    notes = ""
+  ) {
     try {
       const response = await api.put(
-        `/roadmap/${roadmapId}/milestone/${milestoneId}`,
+        `/roadmap/${roadmapId}/milestone/${phaseId}/${milestoneId}`,
         {
           completed,
+          notes,
         }
       );
       return response.data;
@@ -71,12 +101,11 @@ class RoadmapService {
 
   /**
    * Get roadmap analytics
-   * @param {string} roadmapId - The roadmap ID
    * @returns {Promise} - Promise resolving to analytics data
    */
-  async getRoadmapAnalytics(roadmapId) {
+  async getRoadmapAnalytics() {
     try {
-      const response = await api.get(`/roadmap/${roadmapId}/analytics`);
+      const response = await api.get(`/roadmap/analytics/progress`);
       return response.data;
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -86,13 +115,12 @@ class RoadmapService {
 
   /**
    * Regenerate an existing roadmap
-   * @param {string} roadmapId - The roadmap ID
    * @param {string} reason - Reason for regeneration
    * @returns {Promise} - Promise resolving to new roadmap data
    */
-  async regenerateRoadmap(roadmapId, reason = "User requested") {
+  async regenerateRoadmap(reason = "User requested") {
     try {
-      const response = await api.post(`/roadmap/${roadmapId}/regenerate`, {
+      const response = await api.post(`/roadmap/regenerate`, {
         reason,
       });
       return response.data;
@@ -103,15 +131,15 @@ class RoadmapService {
   }
 
   /**
-   * Get all available career paths (for reference)
-   * @returns {Promise} - Promise resolving to career paths data
+   * Get AI-powered next steps suggestions
+   * @returns {Promise} - Promise resolving to suggestions data
    */
-  async getCareerPaths() {
+  async getNextStepsSuggestions() {
     try {
-      const response = await api.get("/roadmap/paths");
+      const response = await api.get("/roadmap/suggestions/next-steps");
       return response.data;
     } catch (error) {
-      console.error("Error fetching career paths:", error);
+      console.error("Error fetching suggestions:", error);
       throw error;
     }
   }

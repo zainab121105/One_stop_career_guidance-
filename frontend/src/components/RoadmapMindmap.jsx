@@ -56,11 +56,11 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
             roadmap.phases?.map((phase) => ({
               name: phase.title,
               type: "phase",
-              data: phase,
+              data: { ...phase, phaseId: phase.id },
               children: phase.milestones?.map((milestone) => ({
                 name: milestone.title,
                 type: "milestone",
-                data: milestone,
+                data: { ...milestone, phaseId: phase.id },
                 children:
                   milestone.resources?.length > 0
                     ? milestone.resources.map((resource) => ({
@@ -133,8 +133,8 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
           };
         case "milestone":
           return {
-            fill: nodeDatum.data?.progress?.completed ? "#22C55E" : "#6B7280",
-            stroke: nodeDatum.data?.progress?.completed ? "#16A34A" : "#4B5563",
+            fill: nodeDatum.data?.completed ? "#22C55E" : "#6B7280",
+            stroke: nodeDatum.data?.completed ? "#16A34A" : "#4B5563",
             textColor: "white",
           };
         case "resource":
@@ -179,16 +179,26 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
     const styles = getNodeStyles(nodeDatum.type);
     const getNodeSize = (type) => {
       switch (type) {
-        case "root": return 50;
-        case "career": return 45;
-        case "phase": return 40;
-        case "milestone": return 35;
-        case "resource": return 30;
-        case "alternatives": return 40;
-        case "alternative": return 35;
-        case "recommendations": return 40;
-        case "recommendation": return 30;
-        default: return 35;
+        case "root":
+          return 50;
+        case "career":
+          return 45;
+        case "phase":
+          return 40;
+        case "milestone":
+          return 35;
+        case "resource":
+          return 30;
+        case "alternatives":
+          return 40;
+        case "alternative":
+          return 35;
+        case "recommendations":
+          return 40;
+        case "recommendation":
+          return 30;
+        default:
+          return 35;
       }
     };
     const nodeSize = getNodeSize(nodeDatum.type);
@@ -233,7 +243,7 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
               <BookOpen className="w-5 h-5 text-white" />
             )}
             {nodeDatum.type === "milestone" &&
-              (nodeDatum.data?.progress?.completed ? (
+              (nodeDatum.data?.completed ? (
                 <CheckCircle2 className="w-5 h-5 text-white" />
               ) : (
                 <Circle className="w-5 h-5 text-white" />
@@ -281,16 +291,18 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
                 : nodeDatum.name}
             </div>
             {/* Additional info for certain node types */}
-            {nodeDatum.type === "milestone" && nodeDatum.data?.estimatedDuration && (
-              <div className="text-xs text-gray-500 mt-1">
-                {nodeDatum.data.estimatedDuration}
-              </div>
-            )}
-            {nodeDatum.type === "phase" && nodeDatum.data?.estimatedDuration && (
-              <div className="text-xs text-gray-500 mt-1">
-                {nodeDatum.data.estimatedDuration}
-              </div>
-            )}
+            {nodeDatum.type === "milestone" &&
+              nodeDatum.data?.estimatedDuration && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {nodeDatum.data.estimatedDuration}
+                </div>
+              )}
+            {nodeDatum.type === "phase" &&
+              nodeDatum.data?.estimatedDuration && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {nodeDatum.data.estimatedDuration}
+                </div>
+              )}
           </div>
         </foreignObject>
       </g>
@@ -311,8 +323,12 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
     <div className="relative w-full h-screen bg-gradient-to-br from-slate-50 to-blue-50 overflow-hidden">
       {/* Header */}
       <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-        <h2 className="text-lg font-bold text-gray-900 mb-1">{roadmapData.title}</h2>
-        <p className="text-sm text-gray-600">Click on nodes to explore your career path</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-1">
+          {roadmapData.title}
+        </h2>
+        <p className="text-sm text-gray-600">
+          Click on nodes to explore your career path
+        </p>
       </div>
 
       {/* Tree visualization */}
@@ -464,17 +480,18 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
                     <button
                       onClick={() =>
                         onMilestoneUpdate?.(
+                          selectedNode.data.phaseId,
                           selectedNode.data.id,
-                          !selectedNode.data.progress?.completed
+                          !selectedNode.data.completed
                         )
                       }
                       className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                        selectedNode.data.progress?.completed
+                        selectedNode.data.completed
                           ? "bg-green-100 text-green-800 hover:bg-green-200"
                           : "bg-blue-100 text-blue-800 hover:bg-blue-200"
                       }`}
                     >
-                      {selectedNode.data.progress?.completed
+                      {selectedNode.data.completed
                         ? "Completed"
                         : "Mark Complete"}
                     </button>
@@ -569,13 +586,18 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
             onClick={() => {
               const treeContainer = treeContainerRef.current;
               if (treeContainer) {
-                const svg = treeContainer.querySelector('svg');
+                const svg = treeContainer.querySelector("svg");
                 if (svg) {
                   const currentTransform = svg.style.transform;
                   const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/);
-                  const currentScale = scaleMatch ? parseFloat(scaleMatch[1]) : 0.7;
+                  const currentScale = scaleMatch
+                    ? parseFloat(scaleMatch[1])
+                    : 0.7;
                   const newScale = Math.min(currentScale * 1.2, 1.2);
-                  svg.style.transform = currentTransform.replace(/scale\([^)]+\)/, `scale(${newScale})`);
+                  svg.style.transform = currentTransform.replace(
+                    /scale\([^)]+\)/,
+                    `scale(${newScale})`
+                  );
                 }
               }
             }}
@@ -588,13 +610,18 @@ const RoadmapMindmap = ({ roadmapData, onMilestoneUpdate }) => {
             onClick={() => {
               const treeContainer = treeContainerRef.current;
               if (treeContainer) {
-                const svg = treeContainer.querySelector('svg');
+                const svg = treeContainer.querySelector("svg");
                 if (svg) {
                   const currentTransform = svg.style.transform;
                   const scaleMatch = currentTransform.match(/scale\(([^)]+)\)/);
-                  const currentScale = scaleMatch ? parseFloat(scaleMatch[1]) : 0.7;
+                  const currentScale = scaleMatch
+                    ? parseFloat(scaleMatch[1])
+                    : 0.7;
                   const newScale = Math.max(currentScale * 0.8, 0.2);
-                  svg.style.transform = currentTransform.replace(/scale\([^)]+\)/, `scale(${newScale})`);
+                  svg.style.transform = currentTransform.replace(
+                    /scale\([^)]+\)/,
+                    `scale(${newScale})`
+                  );
                 }
               }
             }}

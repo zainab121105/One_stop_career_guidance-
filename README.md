@@ -5,6 +5,7 @@ A comprehensive full-stack platform that helps students and professionals discov
 ## 🚀 Features
 
 ### Current Implementation
+
 - **Landing Page**: Modern, responsive design with feature showcase
 - **Authentication System**: Secure login/signup with JWT tokens
 - **Intelligent Onboarding**: Multi-step gamified assessment process
@@ -13,6 +14,7 @@ A comprehensive full-stack platform that helps students and professionals discov
 - **Activity Tracking**: User activity logging and progress tracking
 
 ### Upcoming Features
+
 - Personalized Career Roadmaps
 - AI Career Counselling Chatbot (24/7)
 - Gamified Progress Tracker with Badges
@@ -26,6 +28,7 @@ A comprehensive full-stack platform that helps students and professionals discov
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - **React 18** with JSX
 - **Vite** for fast development and building
 - **Tailwind CSS** for styling
@@ -34,6 +37,7 @@ A comprehensive full-stack platform that helps students and professionals discov
 - **Lucide React** for icons
 
 ### Backend
+
 - **Node.js** with Express.js
 - **MongoDB** with Mongoose for data storage
 - **JWT** for authentication
@@ -43,6 +47,7 @@ A comprehensive full-stack platform that helps students and professionals discov
 - **CORS** for cross-origin requests
 
 ### Database Structure
+
 - **MongoDB**: User data, activities, progress tracking
 - **Firebase**: Planned for multimedia data storage
 
@@ -75,6 +80,7 @@ careerpath/
 ## 🚦 Getting Started
 
 ### Prerequisites
+
 - Node.js (v16 or higher)
 - MongoDB (local or cloud instance)
 - npm or yarn
@@ -82,12 +88,14 @@ careerpath/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd careerpath
    ```
 
 2. **Install dependencies**
+
    ```bash
    # Install frontend dependencies
    cd frontend
@@ -99,25 +107,48 @@ careerpath/
    ```
 
 3. **Set up environment variables**
+
+   **Backend:**
+
    ```bash
    # In the backend directory
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
+   **Frontend:**
+
+   ```bash
+   # In the frontend directory
+   cp .env.example .env
+   # Edit .env with your API URL configuration
+   ```
+
+   The frontend `.env` file should contain:
+
+   ```env
+   # API Base URL - Used for all backend API calls
+   VITE_API_BASE_URL=http://localhost:5000/api
+   VITE_API_TIMEOUT=10000
+   VITE_APP_ENV=development
+   ```
+
 4. **Start MongoDB**
+
    - Make sure MongoDB is running on your system
    - Default connection: `mongodb://localhost:27017/careerpath`
 
 5. **Run the application**
-   
+
    **Backend (Terminal 1):**
+
    ```bash
    cd backend
    npm run dev
    ```
 
    **Frontend (Terminal 2):**
+
    ```bash
    cd frontend
    npm run dev
@@ -151,12 +182,14 @@ FRONTEND_URL=http://localhost:5173
 ## 📝 API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/signup` - User registration
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user
 - `PUT /api/auth/profile` - Update user profile
 
 ### User Management
+
 - `POST /api/user/onboarding` - Save onboarding data
 - `GET /api/user/stats` - Get user statistics
 - `GET /api/user/activity` - Get user activity
@@ -167,12 +200,14 @@ FRONTEND_URL=http://localhost:5173
 ## 🎨 Design System
 
 ### Colors
+
 - **Primary**: Blue shades (#3B82F6)
-- **Accent**: Green shades (#10B981)  
+- **Accent**: Green shades (#10B981)
 - **Warning**: Orange shades (#F59E0B)
 - **Neutral**: Gray shades
 
 ### Components
+
 - Responsive design with mobile-first approach
 - Consistent spacing using 8px grid system
 - Modern UI with subtle shadows and rounded corners
@@ -181,12 +216,14 @@ FRONTEND_URL=http://localhost:5173
 ## 🧪 Development
 
 ### Code Style
+
 - ESLint configuration for code quality
 - Consistent naming conventions
 - Modular component structure
 - Clean separation of concerns
 
 ### State Management
+
 - React Context for authentication
 - Local state for component-specific data
 - API-first architecture
@@ -194,13 +231,33 @@ FRONTEND_URL=http://localhost:5173
 ## 🚀 Deployment
 
 ### Frontend Deployment
+
+**Environment Configuration for Production:**
+Before deploying, create a `.env.production` file with your production API URL:
+
+```env
+VITE_API_BASE_URL=https://your-backend-domain.com/api
+VITE_API_TIMEOUT=10000
+VITE_APP_ENV=production
+```
+
+**Build and Deploy:**
+
 ```bash
 cd frontend
 npm run build
-# Deploy the dist/ folder to your hosting service
+# Deploy the dist/ folder to your hosting service (Vercel, Netlify, etc.)
 ```
 
+**Important Notes:**
+
+- The frontend now uses environment variables for API configuration
+- Update `VITE_API_BASE_URL` to match your deployed backend URL
+- Environment variables must be prefixed with `VITE_` to be accessible in the browser
+- For different environments (staging, production), use appropriate `.env` files
+
 ### Backend Deployment
+
 ```bash
 cd backend
 # Set production environment variables

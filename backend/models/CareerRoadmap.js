@@ -27,6 +27,10 @@ const milestoneSchema = new mongoose.Schema(
         "networking",
         "career",
         "tool",
+        "portfolio",
+        "learning",
+        "practice",
+        "assessment",
       ],
     },
     estimatedDuration: {
@@ -250,6 +254,11 @@ const careerRoadmapSchema = new mongoose.Schema(
             "skills",
             "tools",
             "inspiration",
+            "budget",
+            "career",
+            "personal",
+            "resources",
+            "planning",
           ],
           required: true,
         },
@@ -276,8 +285,7 @@ const careerRoadmapSchema = new mongoose.Schema(
     // Cache and optimization
     cacheKey: {
       type: String,
-      unique: true,
-      sparse: true,
+      sparse: true, // Remove unique constraint since we're including userId and timestamp
     },
     lastAccessed: {
       type: Date,
@@ -358,11 +366,12 @@ careerRoadmapSchema.methods.completeMilestone = function (
 // Method to generate cache key
 careerRoadmapSchema.methods.generateCacheKey = function () {
   const profile = this.userProfile;
-  const key = `roadmap_${profile.currentLevel}_${
+  const timestamp = Date.now();
+  const key = `roadmap_${this.userId}_${profile.currentLevel}_${
     profile.careerStage
   }_${profile.interests.sort().join("_")}_${profile.goals.sort().join("_")}_${
     profile.timeCommitment
-  }`;
+  }_${timestamp}`;
   return key.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
 };
 
