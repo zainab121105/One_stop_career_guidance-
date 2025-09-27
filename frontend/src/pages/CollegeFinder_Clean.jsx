@@ -15,114 +15,29 @@ const CollegeFinder = () => {
   const API_KEY = '579b464db66ec23bdd000001aa62979bc84546ae6ee84ae51ce0db09';
   const API_ENDPOINT = `https://api.data.gov.in/resource/bd319d74-c98a-4e7e-b8d6-dc88053a6a3b?api-key=${API_KEY}&format=json&limit=500`;
 
-  // Enhanced location extraction with comprehensive mapping and pattern matching
-  const extractLocation = (name, college) => {
+  // Location extraction with defensive programming
+  const extractLocation = (name) => {
     if (!name) return { city: 'Unknown City', state: 'Unknown State' };
     
     try {
       const lowerName = name.toLowerCase();
-      
-      // First check if college object has location fields
-      if (college) {
-        const collegeCity = college.city || college.district || college.location;
-        const collegeState = college.state || college.region;
-        if (collegeCity && collegeState) {
-          return {
-            city: collegeCity.charAt(0).toUpperCase() + collegeCity.slice(1).toLowerCase(),
-            state: collegeState.charAt(0).toUpperCase() + collegeState.slice(1).toLowerCase()
-          };
-        }
-      }
-      
-      // Comprehensive location mapping with more cities and states
       const locations = {
-        // Karnataka
         'bangalore': { city: 'Bangalore', state: 'Karnataka' },
         'bengaluru': { city: 'Bangalore', state: 'Karnataka' },
-        'mysore': { city: 'Mysore', state: 'Karnataka' },
-        'mysuru': { city: 'Mysore', state: 'Karnataka' },
-        'hubli': { city: 'Hubli', state: 'Karnataka' },
-        'mangalore': { city: 'Mangalore', state: 'Karnataka' },
-        'dharwad': { city: 'Dharwad', state: 'Karnataka' },
-        'belgaum': { city: 'Belgaum', state: 'Karnataka' },
-        'karnataka': { city: 'Karnataka', state: 'Karnataka' },
-        
-        // Maharashtra
         'mumbai': { city: 'Mumbai', state: 'Maharashtra' },
         'pune': { city: 'Pune', state: 'Maharashtra' },
-        'nashik': { city: 'Nashik', state: 'Maharashtra' },
-        'nagpur': { city: 'Nagpur', state: 'Maharashtra' },
-        'aurangabad': { city: 'Aurangabad', state: 'Maharashtra' },
-        'kolhapur': { city: 'Kolhapur', state: 'Maharashtra' },
-        'solapur': { city: 'Solapur', state: 'Maharashtra' },
-        'maharashtra': { city: 'Maharashtra', state: 'Maharashtra' },
-        
-        // Tamil Nadu
         'chennai': { city: 'Chennai', state: 'Tamil Nadu' },
-        'madras': { city: 'Chennai', state: 'Tamil Nadu' },
-        'coimbatore': { city: 'Coimbatore', state: 'Tamil Nadu' },
-        'madurai': { city: 'Madurai', state: 'Tamil Nadu' },
-        'salem': { city: 'Salem', state: 'Tamil Nadu' },
-        'trichy': { city: 'Trichy', state: 'Tamil Nadu' },
-        'tiruchirapalli': { city: 'Trichy', state: 'Tamil Nadu' },
-        'vellore': { city: 'Vellore', state: 'Tamil Nadu' },
-        'tamil nadu': { city: 'Tamil Nadu', state: 'Tamil Nadu' },
-        'tamilnadu': { city: 'Tamil Nadu', state: 'Tamil Nadu' },
-        
-        // Delhi
         'delhi': { city: 'Delhi', state: 'Delhi' },
-        'new delhi': { city: 'New Delhi', state: 'Delhi' },
-        
-        // West Bengal
         'kolkata': { city: 'Kolkata', state: 'West Bengal' },
-        'calcutta': { city: 'Kolkata', state: 'West Bengal' },
-        'west bengal': { city: 'West Bengal', state: 'West Bengal' },
-        
-        // Telangana & Andhra Pradesh
         'hyderabad': { city: 'Hyderabad', state: 'Telangana' },
-        'secunderabad': { city: 'Secunderabad', state: 'Telangana' },
-        'visakhapatnam': { city: 'Visakhapatnam', state: 'Andhra Pradesh' },
-        'vijayawada': { city: 'Vijayawada', state: 'Andhra Pradesh' },
-        'tirupati': { city: 'Tirupati', state: 'Andhra Pradesh' },
-        'telangana': { city: 'Telangana', state: 'Telangana' },
-        'andhra pradesh': { city: 'Andhra Pradesh', state: 'Andhra Pradesh' },
-        
-        // Other major states and cities
-        'jaipur': { city: 'Jaipur', state: 'Rajasthan' },
-        'ahmedabad': { city: 'Ahmedabad', state: 'Gujarat' },
-        'lucknow': { city: 'Lucknow', state: 'Uttar Pradesh' },
-        'bhopal': { city: 'Bhopal', state: 'Madhya Pradesh' },
-        'patna': { city: 'Patna', state: 'Bihar' },
-        'kochi': { city: 'Kochi', state: 'Kerala' },
-        'chandigarh': { city: 'Chandigarh', state: 'Chandigarh' },
-        'guwahati': { city: 'Guwahati', state: 'Assam' }
+        'karnataka': { city: 'Various Cities', state: 'Karnataka' },
+        'maharashtra': { city: 'Various Cities', state: 'Maharashtra' },
+        'tamil nadu': { city: 'Various Cities', state: 'Tamil Nadu' }
       };
 
-      // Check for exact matches first
       for (const [key, location] of Object.entries(locations)) {
         if (lowerName.includes(key)) {
           return location;
-        }
-      }
-      
-      // Try to extract from common patterns
-      const patterns = [
-        /\b([a-z]+)\s*,\s*([a-z\s]+)$/i,  // City, State pattern
-        /\b([a-z\s]+)\s*college\s*,\s*([a-z\s]+)$/i,  // College, Location pattern
-        /\b([a-z]+)\s*university\s*,\s*([a-z\s]+)$/i,  // University, Location pattern
-      ];
-      
-      for (const pattern of patterns) {
-        const match = name.match(pattern);
-        if (match && match.length >= 3) {
-          const possibleCity = match[1].trim();
-          const possibleState = match[2].trim();
-          if (possibleCity && possibleState) {
-            return {
-              city: possibleCity.charAt(0).toUpperCase() + possibleCity.slice(1).toLowerCase(),
-              state: possibleState.charAt(0).toUpperCase() + possibleState.slice(1).toLowerCase()
-            };
-          }
         }
       }
       
@@ -133,74 +48,28 @@ const CollegeFinder = () => {
     }
   };
 
-  // Enhanced course inference with comprehensive keyword matching
+  // Course inference with defensive programming  
   const inferCourses = (college) => {
     if (!college) return ['General'];
     
     try {
       const name = (college.title || college.name || '').toLowerCase();
-      const description = (college.description || '').toLowerCase();
-      const combinedText = `${name} ${description}`;
-      
       const courseKeywords = {
-        'Engineering': [
-          'engineering', 'technical', 'technology', 'polytechnic', 'iit', 'nit', 'iiit',
-          'computer science', 'mechanical', 'electrical', 'civil', 'electronics',
-          'information technology', 'software', 'hardware', 'automobile'
-        ],
-        'Medical': [
-          'medical', 'medicine', 'dental', 'pharmacy', 'nursing', 'aiims', 'hospital',
-          'health', 'clinic', 'doctor', 'nurse', 'pharmaceutical', 'physiotherapy',
-          'ayurvedic', 'homeopathic', 'veterinary'
-        ],
-        'Management': [
-          'management', 'mba', 'business', 'commerce', 'bba', 'iiim', 'finance',
-          'marketing', 'hr', 'human resource', 'economics', 'accounting', 'banking'
-        ],
-        'Arts & Humanities': [
-          'arts', 'humanities', 'literature', 'fine arts', 'liberal arts', 'english',
-          'hindi', 'history', 'geography', 'sociology', 'psychology', 'philosophy',
-          'journalism', 'mass communication'
-        ],
-        'Science': [
-          'science', 'physics', 'chemistry', 'biology', 'mathematics', 'research',
-          'biotechnology', 'microbiology', 'botany', 'zoology', 'geology'
-        ],
-        'Law': [
-          'law', 'legal', 'judicial', 'nlsiu', 'advocate', 'court', 'justice'
-        ],
-        'Agriculture': [
-          'agriculture', 'agricultural', 'farming', 'veterinary', 'horticulture',
-          'forestry', 'dairy', 'fisheries'
-        ],
-        'Education': [
-          'education', 'teaching', 'teacher', 'b.ed', 'm.ed', 'training', 'pedagogy'
-        ],
-        'Pharmacy': [
-          'pharmacy', 'pharmaceutical', 'drugs', 'medicine', 'chemist'
-        ],
-        'Computer Science': [
-          'computer', 'software', 'information technology', 'it', 'cs', 'programming',
-          'data science', 'artificial intelligence', 'machine learning'
-        ],
-        'Architecture': [
-          'architecture', 'design', 'planning', 'interior', 'construction'
-        ],
-        'Nursing': [
-          'nursing', 'nurse', 'healthcare', 'patient care', 'medical assistant'
-        ]
+        'Engineering': ['engineering', 'technical', 'technology'],
+        'Medical': ['medical', 'medicine', 'dental'], 
+        'Management': ['management', 'mba', 'business'],
+        'Arts': ['arts', 'humanities'],
+        'Science': ['science', 'physics', 'chemistry']
       };
       
       const detectedCourses = [];
       Object.entries(courseKeywords).forEach(([course, keywords]) => {
-        if (keywords && keywords.some && keywords.some(keyword => combinedText.includes(keyword))) {
+        if (keywords && keywords.some && keywords.some(keyword => name.includes(keyword))) {
           detectedCourses.push(course);
         }
       });
       
-      // Remove duplicates and return
-      const uniqueCourses = [...new Set(detectedCourses)];
-      return uniqueCourses.length > 0 ? uniqueCourses : ['General'];
+      return detectedCourses.length > 0 ? detectedCourses : ['General'];
     } catch (error) {
       console.error('Error inferring courses:', error);
       return ['General'];
@@ -228,54 +97,20 @@ const CollegeFinder = () => {
         const collegesData = data.records;
         console.log(`Processing ${collegesData.length} colleges`);
         
-        // Remove duplicates first based on name similarity
-        const uniqueCollegesData = collegesData.filter((college, index, arr) => {
-          const currentName = (college?.title || college?.name || '').toLowerCase().trim();
-          if (!currentName || currentName === 'unknown college') return false;
-          
-          // Check if this is the first occurrence of this name
-          return arr.findIndex(c => {
-            const compareName = (c?.title || c?.name || '').toLowerCase().trim();
-            return compareName === currentName;
-          }) === index;
-        });
-        
-        console.log(`Removed duplicates: ${collegesData.length} -> ${uniqueCollegesData.length} colleges`);
-        
-        const processedColleges = uniqueCollegesData.map((college, index) => {
+        const processedColleges = collegesData.map((college, index) => {
           try {
-            const location = extractLocation(college?.title || college?.name || '', college);
+            const location = extractLocation(college?.title || college?.name || '');
             const courses = inferCourses(college);
             
-            // Better type inference with standardized values
-            let collegeType = college?.type || college?.category || '';
-            if (!collegeType || collegeType.toLowerCase() === 'unknown') {
-              const name = (college?.title || college?.name || '').toLowerCase();
-              if (name.includes('university')) collegeType = 'University';
-              else if (name.includes('college')) collegeType = 'College';
-              else if (name.includes('institute') || name.includes('institution')) collegeType = 'Institute';
-              else if (name.includes('school')) collegeType = 'School';
-              else if (name.includes('academy')) collegeType = 'Academy';
-              else collegeType = 'Institute';
-            }
-            
-            // Standardize college type names
-            collegeType = collegeType.charAt(0).toUpperCase() + collegeType.slice(1).toLowerCase();
-            
             return {
-              id: college?.id || `college_${index}`,
+              id: college?.id || index,
               name: college?.title || college?.name || 'Unknown College',
               city: location.city,
               state: location.state,
-              type: collegeType,
+              type: college?.type || 'Unknown',
               courses: courses,
-              website: college?.website || college?.url || '',
-              phone: college?.phone || college?.contact || '',
-              email: college?.email || '',
-              established: college?.established || college?.founded || '',
-              affiliation: college?.affiliation || college?.university || '',
-              description: college?.description || '',
-              rawData: college
+              website: college?.website || '',
+              phone: college?.phone || ''
             };
           } catch (error) {
             console.error(`Error processing college ${index}:`, error);
@@ -306,29 +141,14 @@ const CollegeFinder = () => {
     fetchColleges();
   }, []);
 
-  // Get unique values with defensive programming and validation
+  // Get unique values with defensive programming
   const getUniqueStates = () => {
     try {
       if (!Array.isArray(colleges) || colleges.length === 0) return [];
-      
-      // Valid Indian states and union territories
-      const validIndianStates = new Set([
-        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-        'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-        'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-        'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-        'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
-        'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
-      ]);
-      
       const statesSet = new Set();
       colleges.forEach(college => {
         if (college?.state && college.state !== 'Unknown State') {
-          // Only add if it's a valid Indian state
-          if (validIndianStates.has(college.state)) {
-            statesSet.add(college.state);
-          }
+          statesSet.add(college.state);
         }
       });
       return Array.from(statesSet).sort();
@@ -363,15 +183,11 @@ const CollegeFinder = () => {
       if (!Array.isArray(colleges) || colleges.length === 0) return [];
       const typesSet = new Set();
       colleges.forEach(college => {
-        if (college?.type && college.type !== 'Unknown' && college.type.trim() !== '') {
-          // Standardize the type name
-          const standardizedType = college.type.charAt(0).toUpperCase() + college.type.slice(1).toLowerCase();
-          typesSet.add(standardizedType);
+        if (college?.type && college.type !== 'Unknown') {
+          typesSet.add(college.type);
         }
       });
-      const sortedTypes = Array.from(typesSet).sort();
-      console.log('Available college types:', sortedTypes);
-      return sortedTypes;
+      return Array.from(typesSet).sort();
     } catch (error) {
       console.error('Error getting unique types:', error);
       return [];
@@ -438,24 +254,17 @@ const CollegeFinder = () => {
         console.log('After course filter:', filtered.length, 'colleges');
       }
 
-      // Type filter with improved matching
+      // Type filter
       if (selectedType && selectedType !== 'all') {
         filtered = filtered.filter(college => {
           try {
-            const collegeType = college?.type;
-            if (!collegeType) return false;
-            
-            // Case-insensitive comparison with standardized format
-            const standardizedCollegeType = collegeType.charAt(0).toUpperCase() + collegeType.slice(1).toLowerCase();
-            const standardizedSelectedType = selectedType.charAt(0).toUpperCase() + selectedType.slice(1).toLowerCase();
-            
-            return standardizedCollegeType === standardizedSelectedType;
+            return college?.type === selectedType;
           } catch (error) {
             console.error('Error in type filter:', error);
             return false;
           }
         });
-        console.log(`After type filter (${selectedType}):`, filtered.length, 'colleges');
+        console.log('After type filter:', filtered.length, 'colleges');
       }
 
       console.log('Final filtered colleges:', filtered.length);
